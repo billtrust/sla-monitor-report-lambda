@@ -1,0 +1,129 @@
+service: sla-monitor-report-sqsworker
+
+# pin to a specific Serverless version
+frameworkVersion: ">=1.2.0 <2.0.0"
+
+provider:
+  name: aws
+  region: us-east-1
+  runtime: nodejs8.10
+  deploymentBucket: ${opt:deployBucket}-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
+  stage: live
+  logRetentionInDays: 3 # cloudwatch logs
+  timeout: 60 # seconds
+  versionFunctions: true
+  iamRoleStatements:
+    -
+      Effect: Allow
+      Action:
+        - sqs:GetQueueUrl
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+      Resource:
+        - 'Fn::Join':
+          - ':'
+          -
+            - 'arn:aws:sqs'
+            - Ref: 'AWS::Region'
+            - Ref: 'AWS::AccountId'
+            - 'sla-monitor-reports'
+    -
+      Effect: Allow
+      Action:
+        - s3:PutObject
+      Resource: arn:aws:s3:::sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}/*
+      
+
+plugins:
+  - serverless-mocha-plugin
+  - serverless-prune-plugin
+
+custom:
+  # serverless-prune-plugin
+  prune:
+    automatic: true
+    number: 5
+
+package:
+  exclude:
+    - .git/**
+
+functions:
+  sla-monitor-report-sqsworker:
+    name: 'sla-monitor-report-sqsworker'
+    handler: src/index.handler
+    environment:
+    environment:
+      METRIC_NAMESPACE: ${env:SLAMONITOR_NAMESPACE, 'SLA-Monitor'}
+      METRIC_RESOLUTION: 60
+      REPORTS_SQS_QUEUE_NAME: sla-monitor-reports-${self:provider.stage}
+      REPORTS_S3_BUCKET_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
+      LOG_LEVEL: 'debug'
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - "ProcessSLAReportSQSQueue"
+              - "Arn"
+          batchSize: 1
+
+resources:
+  Resources:
+    ProcessSLAReportSQSQueue:
+      Type: AWS::SQS::Queue
+      Properties: 
+        QueueName: sla-monitor-reports-${self:provider.stage}
+        ReceiveMessageWaitTimeSeconds: 20
+        VisibilityTimeout: 30
+        MessageRetentionPeriod: 345600 # seconds (4 days)
+        RedrivePolicy:
+          deadLetterTargetArn: 
+            Fn::GetAtt: 
+              - "ProcessSLAReportSQSQueueDeadletter"
+              - "Arn"
+          maxReceiveCount: 5
+    ProcessSLAReportSQSQueuePolicy:
+      Type: 'AWS::SQS::QueuePolicy'
+      Properties:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Id: sqspolicy
+          Statement:
+            - Sid: SendMessage-To-Queue-From-SNS-Topic
+              Effect: Allow
+              Principal: "*"
+              Action:
+                - 'sqs:SendMessage'
+              Resource: { "Fn::Join": [":", ["arn:aws:sqs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "sla-monitor-reports-${self:provider.stage}" ] ] }
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: { "Fn::Join" : ["", ["arn:aws:sns:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":sla-monitor-result-published-${self:provider.stage}" ] ] }
+        Queues:
+          - { "Fn::Join" : ["", ["https://sqs.", { "Ref" : "AWS::Region" }, ".amazonaws.com/", { "Ref" : "AWS::AccountId" }, "/", "sla-monitor-reports-${self:provider.stage}" ] ] }
+      DependsOn:
+        - ProcessSLAReportSQSQueue
+    ProcessSLAReportSQSQueueDeadletter:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: "sla-monitor-reports-deadletter"
+    ProcessSLAReportSNSSubscription:
+      DependsOn: ProcessSLAReportSQSQueue
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: { "Fn::Join" : [":", ["arn:aws:sqs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "sla-monitor-reports-${self:provider.stage}" ] ] }
+        Protocol: SQS
+        TopicArn: { "Fn::Join" : ["", ["arn:aws:sns:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":sla-monitor-result-published-${self:provider.stage}" ] ] }
+    SLAReportsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
+        AccessControl: Private
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            -
+              ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        LifecycleConfiguration:
+          Rules:
+          - ExpirationInDays: 7
+            Status: Enabled
