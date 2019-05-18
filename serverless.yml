@@ -7,10 +7,10 @@ provider:
   name: aws
   region: us-east-1
   runtime: nodejs8.10
-  deploymentBucket: ${opt:deployBucket}-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
+  deploymentBucket: ${opt:deployBucket}
   stage: live
   logRetentionInDays: 3 # cloudwatch logs
-  timeout: 60 # seconds
+  timeout: 30 # seconds
   versionFunctions: true
   iamRoleStatements:
     -
@@ -26,7 +26,7 @@ provider:
             - 'arn:aws:sqs'
             - Ref: 'AWS::Region'
             - Ref: 'AWS::AccountId'
-            - 'sla-monitor-reports'
+            - sla-monitor-reports-${env:AWS_ENV, 'dev'}
     -
       Effect: Allow
       Action:
@@ -53,10 +53,9 @@ functions:
     name: 'sla-monitor-report-sqsworker'
     handler: src/index.handler
     environment:
-    environment:
       METRIC_NAMESPACE: ${env:SLAMONITOR_NAMESPACE, 'SLA-Monitor'}
       METRIC_RESOLUTION: 60
-      REPORTS_SQS_QUEUE_NAME: sla-monitor-reports-${self:provider.stage}
+      REPORTS_SQS_QUEUE_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}
       REPORTS_S3_BUCKET_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
       LOG_LEVEL: 'debug'
     events:
@@ -72,7 +71,7 @@ resources:
     ProcessSLAReportSQSQueue:
       Type: AWS::SQS::Queue
       Properties: 
-        QueueName: sla-monitor-reports-${self:provider.stage}
+        QueueName: sla-monitor-reports-${env:AWS_ENV, 'dev'}
         ReceiveMessageWaitTimeSeconds: 20
         VisibilityTimeout: 30
         MessageRetentionPeriod: 345600 # seconds (4 days)
@@ -94,25 +93,25 @@ resources:
               Principal: "*"
               Action:
                 - 'sqs:SendMessage'
-              Resource: { "Fn::Join": [":", ["arn:aws:sqs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "sla-monitor-reports-${self:provider.stage}" ] ] }
+              Resource: { "Fn::Join": [":", ["arn:aws:sqs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "sla-monitor-reports-${env:AWS_ENV, 'dev'}" ] ] }
               Condition:
                 ArnEquals:
-                  aws:SourceArn: { "Fn::Join" : ["", ["arn:aws:sns:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":sla-monitor-result-published-${self:provider.stage}" ] ] }
+                  aws:SourceArn: { "Fn::Join" : ["", ["arn:aws:sns:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":sla-monitor-result-published-${env:AWS_ENV, 'dev'}" ] ] }
         Queues:
-          - { "Fn::Join" : ["", ["https://sqs.", { "Ref" : "AWS::Region" }, ".amazonaws.com/", { "Ref" : "AWS::AccountId" }, "/", "sla-monitor-reports-${self:provider.stage}" ] ] }
+          - { "Fn::Join" : ["", ["https://sqs.", { "Ref" : "AWS::Region" }, ".amazonaws.com/", { "Ref" : "AWS::AccountId" }, "/", "sla-monitor-reports-${env:AWS_ENV, 'dev'}" ] ] }
       DependsOn:
         - ProcessSLAReportSQSQueue
     ProcessSLAReportSQSQueueDeadletter:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: "sla-monitor-reports-deadletter"
+        QueueName: "sla-monitor-reports-deadletter-${env:AWS_ENV, 'dev'}"
     ProcessSLAReportSNSSubscription:
       DependsOn: ProcessSLAReportSQSQueue
       Type: AWS::SNS::Subscription
       Properties:
-        Endpoint: { "Fn::Join" : [":", ["arn:aws:sqs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "sla-monitor-reports-${self:provider.stage}" ] ] }
+        Endpoint: { "Fn::Join" : [":", ["arn:aws:sqs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "sla-monitor-reports-${env:AWS_ENV, 'dev'}" ] ] }
         Protocol: SQS
-        TopicArn: { "Fn::Join" : ["", ["arn:aws:sns:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":sla-monitor-result-published-${self:provider.stage}" ] ] }
+        TopicArn: { "Fn::Join" : ["", ["arn:aws:sns:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":sla-monitor-result-published-${env:AWS_ENV, 'dev'}" ] ] }
     SLAReportsBucket:
       Type: AWS::S3::Bucket
       Properties:

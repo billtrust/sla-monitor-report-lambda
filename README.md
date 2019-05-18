@@ -8,8 +8,8 @@ This service produces the following output.
 
 ### Example Output - Service Current Summary
 
-s3://<bucketname>/<servicename>/<env>/current-summary.json
-s3://sla-monitor-reports-us-east-1/myservice/dev/current-summary.json
+s3://<bucketname>/<env>/<servicename>/current-summary.json
+s3://sla-monitor-reports-dev-us-east-1/dev/myservice/current-summary.json
 ```json
 {
     "serviceName": "myservice",
@@ -40,8 +40,8 @@ s3://sla-monitor-reports-us-east-1/myservice/dev/current-summary.json
 
 ### Example Output - Service History
 
-s3://<bucketname>/<servicename>/<env>/<timerange>.json
-s3://sla-monitor-reports-us-east-1/myservice/dev/1d.json
+s3://<bucketname>/<env>/<servicename>/<timerange>.json
+s3://sla-monitor-reports-dev-us-east-1/dev/myservice/1d.json
 ```json
 {
     "history": [
@@ -78,23 +78,27 @@ export DEPLOY_BUCKET="company-deploy-bucket"
 export AWS_ENV="dev"
 iam-docker-run \
     --image sla-monitor-report-sqsworker-lambda \
-    --profile $AWS_ENV \
-    --full-entrypoint sls invoke local \
-    -f sla-monitor-report-sqsworker \
-    -p ./events/result-published-event.json \
-    -l -e AWS_ENV=$AWS_ENV -e AWS_REGION=us-east-1 \
-    --deployBucket $DEPLOY_BUCKET
+    --full-entrypoint '/bin/bash ./invokeLocal.sh' \
+    --container-source-path /app \
+    --host-source-path . \
+    -e AWS_ENV=$AWS_ENV \
+    --profile $AWS_ENV
 ```
 
 ## Deployment
 
-```shell
-docker build -t sla-monitor-report-sqsworker-lambda .
+Note: This is dependent on the SNS Topic created in:
+https://github.com/billtrust/sla-monitor-store-results-lambda
 
+```shell
 export DEPLOY_BUCKET="company-deploy-bucket"
 export AWS_ENV="dev"
+docker build -t sla-monitor-report-sqsworker-lambda .
 iam-docker-run \
     --image sla-monitor-report-sqsworker-lambda \
-    --profile $AWS_ENV \
-    --full-entrypoint "sls deploy --deployBucket $DEPLOY_BUCKET"
+    --full-entrypoint "sls deploy --deployBucket $DEPLOY_BUCKET" \
+    --container-source-path /app \
+    --host-source-path . \
+    -e AWS_ENV=$AWS_ENV \
+    --profile $AWS_ENV
 ```
