@@ -1,4 +1,25 @@
 {
+  "Records": [
+      {
+          "messageId": "4c345603-810b-4fda-9d25-32891901f71d",
+          "receiptHandle": "MessageReceiptHandle",
+          "body": "{\n  \"Type\" : \"Notification\",\n  \"MessageId\" : \"4bfb5eb7-607c-595c-93d4-0d4723073725\",\n  \"TopicArn\" : \"arn:aws:sns:us-east-1:478543871670:fpw-secret-store-request\",\n  \"Message\" : \"{\\\"action\\\":\\\"store\\\",\\\"secret\\\":\\\"my secret\\\",\\\"rawApplication\\\":\\\"amazon.com\\\",\\\"normalizedApplication\\\":\\\"amazon.com\\\",\\\"userToken\\\":\\\"UTded8774baac9d0aa3fa5888f1e1dc0d2a33f204c519b9785932603c06b60759e\\\"}\",\n  \"Timestamp\" : \"2018-08-17T03:30:03.178Z\",\n  \"SignatureVersion\" : \"1\",\n  \"Signature\" : \"JCaHsacH+bW1DQI6jxJudDgEw3pTzEn7mVE0rj6KoZZjCCJ5aHxB6R07p1wEKkMegQmh5KuaxBegiDkMjKwLbuqwpTkdLi4xcsJuITUt8ymtZoySOEaGV7E7Ru/r8tJjZLjHfFvC5be4eWf2rdL6u/NmqcYQAWhBF8fgiPmEgll9Q8UcWvvbiHWnht4y2N5SphIv1L2Z8tiY8K5aWu3ERgtX49sSOqEJStNm1ajWqlfiu6TmaLsZEsraxWdNu96gzG8vTnvJxLstR3ofWJ7a9OHSG1cmo54nYIswQb9qqy47hUK5EbEqefzyGC2DiNKTsLt3rFHcYZBYU+RwW1X1VQ==\",\n  \"SigningCertURL\" : \"https://sns.us-east-1.amazonaws.com/SimpleNotificationService-eddd612472386ea12ed8dcd8bcbddca752.pem\",\n  \"UnsubscribeURL\" : \"https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:478543871670:fpw-secret-store-request:16d4af72-a43d-4c7c-a2dd-a3595fcf17d3\"\n}",
+          "attributes": {
+              "ApproximateReceiveCount": "3",
+              "SentTimestamp": "1534476603214",
+              "SenderId": "AIDAIT2UOQQY3AUEKVGXU",
+              "ApproximateFirstReceiveTimestamp": "1534476603229"
+          },
+          "messageAttributes": {},
+          "md5OfBody": "486fcf43c0729f744871f8b95f137ff2",
+          "eventSource": "aws:sqs",
+          "eventSourceARN": "arn:aws:sqs:us-east-1:xxx:sla-monitor-result-published-dev",
+          "awsRegion": "us-east-1"
+      }
+  ]
+}
+
+{
     "Type" : "Notification",
     "MessageId" : "8dbb3a40-5079-5da1-9fae-6f18a5eaba52",
     "TopicArn" : "arn:aws:sns:us-east-1:xxx:sla-monitor-result-published-dev",

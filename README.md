@@ -82,6 +82,7 @@ iam-docker-run \
     --container-source-path /app \
     --host-source-path . \
     -e AWS_ENV=$AWS_ENV \
+    --interactive \
     --profile $AWS_ENV
 ```
 
@@ -91,9 +92,9 @@ Note: This is dependent on the SNS Topic created in:
 https://github.com/billtrust/sla-monitor-store-results-lambda
 
 ```shell
+docker build -t sla-monitor-report-sqsworker-lambda .
 export DEPLOY_BUCKET="company-deploy-bucket"
 export AWS_ENV="dev"
-docker build -t sla-monitor-report-sqsworker-lambda .
 iam-docker-run \
     --image sla-monitor-report-sqsworker-lambda \
     --full-entrypoint "sls deploy --deployBucket $DEPLOY_BUCKET" \

@@ -5,13 +5,11 @@ if [[ -z "$AWS_ENV" ]]; then
     exit 1
 fi
 
-if [[ -z "$DEPLOY_BUCKET" ]]; then
-    echo "Missing DEPLOY_BUCKET"
-    exit 1
-fi
+TEST_JSON_FILE=$(node ./events/generateTestingEvent.js)
+echo "TEST_JSON_FILE: $TEST_JSON_FILE"
 
 sls invoke local \
     -f sla-monitor-report-sqsworker \
-    -p ./events/result-published-event.json \
+    -p $TEST_JSON_FILE \
     -l -e AWS_ENV=$AWS_ENV -e AWS_REGION=us-east-1 \
-    --deployBucket $DEPLOY_BUCKET
+    --deployBucket notneededfortestinvoke

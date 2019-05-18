@@ -58,8 +58,6 @@ async function getAwsAccountId() {
 }
 
 async function processMessage(message, receiptHandle) {
-    const message = JSON.parse(messageBody);
-
     // sample message:
     // {
     //     timestamp: 1558115155,
