@@ -35,8 +35,12 @@ class ReportService {
             )
         }
 
-        logger.info(rangeSummaries);
-        return rangeSummaries;
+        let statusChanges = calculateStatusChanges(metricResults);
+        return {
+            serviceName: message.service,
+            rangeSummaries,
+            statusChanges
+        };
 
     }
 
@@ -62,7 +66,7 @@ async function getCloudWatchSLAMetrics(startTime, endTime, serviceName, nextToke
         StartTime: moment(startTime).toISOString(),
         EndTime: moment(endTime).toISOString(),
         ScanBy: 'TimestampDescending',
-        MaxDatapoints: 1000,
+        MaxDatapoints: 100000,
         MetricDataQueries: [
             {
                 Id: 'successes',
@@ -189,10 +193,6 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
     for (let result of metricResults) {
         let prev = lastStatusWasSuccess;
 
-        //todo
-        //let timeRangeStr = determineTimeRangeFromTimestamp(result.Timestamp);
-        //zzz let timeRangeStr = '1d';
-
         if (isTimestampWithinTimeRange(result.Timestamp, timeRangeStr)) {
             numAttempts++;
             if (result.Successes) {
@@ -226,6 +226,44 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
     }
 }
 
+function calculateStatusChanges(metricResults) {
+    logger.debug(`Calculating status changes (metricResults length: ${metricResults.length})`)
+
+    let statusChanges = [],
+        lastStatusWasSuccess = true,
+        lastTimestamp = metricResults[0].Timestamp,
+        durationMins = 0,
+        timeStampLastChange = metricResults[0].Timestamp;
+    let allMetricsExceptFirst = metricResults.slice(1);
+    for (let result of allMetricsExceptFirst) {
+        let prev = lastStatusWasSuccess;
+
+        if (result.Successes) {
+            lastStatusWasSuccess = true;
+        } else {
+            lastStatusWasSuccess = false;
+            if (lastTimestamp) {
+                durationMins += numMinutesBetweenTimestamps(result.Timestamp, lastTimestamp);
+            }
+            lastTimestamp = result.Timestamp;
+        }
+        // did the status change from the prior period?
+        if (lastStatusWasSuccess != prev) {
+            statusChanges.push({
+                status: result.Successes ? 'SUCCESS' : 'FAILURE', // TODO: 'UNKNOWN' ???
+                fromTimestamp: timeStampLastChange,
+                toTimestamp: result.Timestamp,
+                durationMins
+            });
+            timeStampLastChange = result.Timestamp;
+            durationMins = 0;
+        }
+    }
+
+    return statusChanges;
+}
+
+
 // given a time range string like '7d' (for 7 days), returns the epoch time of the
 // beginning of that period, meaning '7d' would be 7 days ago from the current time
 function epochFromStartOfTimeRange(timeRangeStr) {
@@ -253,4 +291,4 @@ function isTimestampWithinTimeRange(timestamp, timeRangeStr) {
     return isWithinRange;
 }
 
-module.exports = ReportService
+module.exports = ReportService;

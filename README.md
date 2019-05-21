@@ -34,7 +34,7 @@ s3://sla-monitor-reports-dev-us-east-1/dev/myservice/current-summary.json
             "status": "SUCCESS|FAILURE|UNKNOWN",
             "fromTimestamp": "epoch",
             "toTimestamp": "epoch",
-            "duration": "human readable like 2 days, 15 minutes, etc."
+            "durationMins": 15
         }
     ]
 }

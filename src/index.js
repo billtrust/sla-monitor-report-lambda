@@ -72,6 +72,7 @@ async function processMessage(message, receiptHandle) {
         message,
         ['1d', '3d', '7d', '14d']
     );
+    logger.info(summaryReport);
 
     await deleteMessage(receiptHandle)
 }
