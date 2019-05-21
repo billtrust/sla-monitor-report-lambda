@@ -68,8 +68,9 @@ async function processMessage(message, receiptHandle) {
     // }
 
     const reportService = new ReportService();
-    await reportService.generateSummaryReport(
-        message
+    let summaryReport = await reportService.generateSummaryReport(
+        message,
+        ['1d', '3d', '7d', '14d']
     );
 
     await deleteMessage(receiptHandle)

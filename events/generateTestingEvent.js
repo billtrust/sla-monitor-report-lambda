@@ -5,7 +5,7 @@ const message = {
     timestamp: 1558115155,
     succeeded: true,
     groups: [ 'all', 'devteamname' ],
-    service: 'myservice',
+    service: process.env.TEST_SERVICE || 'myservice',
     testExecutionSecs: 14.6719
 }
 

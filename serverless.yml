@@ -54,7 +54,6 @@ functions:
     handler: src/index.handler
     environment:
       METRIC_NAMESPACE: ${env:SLAMONITOR_NAMESPACE, 'SLA-Monitor'}
-      METRIC_RESOLUTION: 60
       REPORTS_SQS_QUEUE_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}
       REPORTS_S3_BUCKET_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
       LOG_LEVEL: 'debug'
