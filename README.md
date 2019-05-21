@@ -1,5 +1,7 @@
 # SLA Monitor Report SQS Worker Lambda
 
+This service pre-generates reports based on the CloudWatch SLA Monitor custom metrics, and stores those reports on S3, so that they can be viewed in the webapp very quickly, as the rendering time is done in advance.
+
 Each time SLA results are stored to the custom CloudWatch metrics, an SNS topic will fire to kick off this report renderer which will pre-render the summary and detail reports for each service for various time ranges (1d, 7d, 30d).
 
 ## Example Output

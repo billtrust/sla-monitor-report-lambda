@@ -36,15 +36,15 @@ class ReportService {
         }
 
         let statusChanges = calculateStatusChanges(metricResults);
+        let history = generateHistoryRecords(metricResults);
+
         return {
             serviceName: message.service,
+            env: process.env.AWS_ENV,
+            currentStatus: message.succeeded,
             rangeSummaries,
             statusChanges
         };
-
-    }
-
-    async generateHistoryReport() {
 
     }
 
@@ -154,10 +154,13 @@ async function getCloudWatchSLAMetrics(startTime, endTime, serviceName, nextToke
         // logger.trace(cwData);
         for (let i=0; i<cwData.MetricDataResults[0].Timestamps.length; i++) {
             results.push({
-                Timestamp: cwData.MetricDataResults[0].Timestamps[i],
-                Successes: cwData.MetricDataResults[0].Values[i],
-                Attempts: cwData.MetricDataResults[1].Values[i],
-                DurationSeconds: cwData.MetricDataResults[2].Values[i]
+                timestamp: cwData.MetricDataResults[0].Timestamps[i],
+                //Successes: cwData.MetricDataResults[0].Values[i],
+                succeeded: cwData.MetricDataResults[0].Values[i],
+                //Attempts: cwData.MetricDataResults[1].Values[i],
+                attempted: cwData.MetricDataResults[1].Values[i],
+                //DurationSeconds: cwData.MetricDataResults[2].Values[i]
+                testExecutionSecs: cwData.MetricDataResults[2].Values[i]
             });
         }
         if (cwData.NextToken) {
@@ -175,10 +178,10 @@ async function getCloudWatchSLAMetrics(startTime, endTime, serviceName, nextToke
 }
 
 // metricResults format: (return value of getCloudwatchSLAMetrics), example:
-// { Timestamp: 2019-05-21T00:31:00.000Z,
-//     Successes: 1,
-//     Attempts: 1,
-//     DurationSeconds: 18.8641 }
+// { timestamp: 2019-05-21T00:31:00.000Z,
+//     succeeded: 1,
+//     attempted: 1,
+//     testExecutionSecs: 18.8641 }
 // timeRangeStr: string enum in format 1d, 3d, 7d, 14d, etc.
 function calculateRangeSummary(metricResults, timeRangeStr) {
     logger.debug(`Calculating range summary for ${timeRangeStr}, metricResults length: ${metricResults.length}`)
@@ -193,9 +196,9 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
     for (let result of metricResults) {
         let prev = lastStatusWasSuccess;
 
-        if (isTimestampWithinTimeRange(result.Timestamp, timeRangeStr)) {
+        if (isTimestampWithinTimeRange(result.timestamp, timeRangeStr)) {
             numAttempts++;
-            if (result.Successes) {
+            if (result.succeededd) {
                 lastStatusWasSuccess = true;
                 numSuccesses++;
             } else {
@@ -209,7 +212,7 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
             // did the status change from the prior period?
             if (lastStatusWasSuccess != prev) {
                 // each time the status changes to a failure, increment num outages
-                if (result.Successes == 0) {
+                if (result.succeeded == 0) {
                     numOutages++;
                 }
             }
@@ -238,7 +241,7 @@ function calculateStatusChanges(metricResults) {
     for (let result of allMetricsExceptFirst) {
         let prev = lastStatusWasSuccess;
 
-        if (result.Successes) {
+        if (result.succeeded) {
             lastStatusWasSuccess = true;
         } else {
             lastStatusWasSuccess = false;
@@ -250,7 +253,7 @@ function calculateStatusChanges(metricResults) {
         // did the status change from the prior period?
         if (lastStatusWasSuccess != prev) {
             statusChanges.push({
-                status: result.Successes ? 'SUCCESS' : 'FAILURE', // TODO: 'UNKNOWN' ???
+                status: result.succeeded ? 'SUCCESS' : 'FAILURE', // TODO: 'UNKNOWN' ???
                 fromTimestamp: timeStampLastChange,
                 toTimestamp: result.Timestamp,
                 durationMins
@@ -261,6 +264,13 @@ function calculateStatusChanges(metricResults) {
     }
 
     return statusChanges;
+}
+
+function generateHistoryRecords(metricResults) {
+    let history = [];
+    for (let result of metricResults) {
+
+    }
 }
 
 
