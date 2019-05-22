@@ -53,6 +53,7 @@ functions:
     name: 'sla-monitor-report-sqsworker'
     handler: src/index.handler
     environment:
+      AWS_ENV: ${env:AWS_ENV, 'dev'}
       METRIC_NAMESPACE: ${env:SLAMONITOR_NAMESPACE, 'SLA-Monitor'}
       REPORTS_SQS_QUEUE_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}
       REPORTS_S3_BUCKET_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
@@ -123,5 +124,5 @@ resources:
                 SSEAlgorithm: AES256
         LifecycleConfiguration:
           Rules:
-          - ExpirationInDays: 7
+          - ExpirationInDays: 30
             Status: Enabled

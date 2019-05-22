@@ -8,7 +8,7 @@ const moment = MomentRange.extendMoment(Moment);
 class ReportService {
     constructor() {}
 
-    async generateSummaryReport(message, timeRanges) {
+    async generateReport(message, timeRanges) {
         logger.debug(`Generating summary report for ${message.service}`);
 
         const endTime = (new Date).getTime();
@@ -27,7 +27,7 @@ class ReportService {
                         numAttempts: rangeSummary.numAttempts,
                         numSuccesses: rangeSummary.numSuccesses,
                         successPercent: rangeSummary.successPercent,
-                        failureMinutes: rangeSummary.failureMinutes,
+                        failureMinutes: Math.round(rangeSummary.failureMinutes * 100) / 100,
                         numFailures: rangeSummary.numFailures,
                         numOutages: rangeSummary.numOutages
                     }
@@ -36,20 +36,26 @@ class ReportService {
         }
 
         let statusChanges = calculateStatusChanges(metricResults);
-        let history = generateHistoryRecords(metricResults);
 
         return {
-            serviceName: message.service,
-            env: process.env.AWS_ENV,
-            currentStatus: message.succeeded,
-            rangeSummaries,
-            statusChanges
+            summary: {
+                serviceName: message.service,
+                env: process.env.AWS_ENV,
+                currentStatus: message.succeeded,
+                rangeSummaries: [
+                    ... rangeSummaries
+                ],
+                statusChanges    
+            },
+            history: [
+                ... metricResults
+            ]
         };
 
     }
 
     async generateServicesList() {
-
+        // TODO
     }
 
 }
@@ -154,12 +160,8 @@ async function getCloudWatchSLAMetrics(startTime, endTime, serviceName, nextToke
         // logger.trace(cwData);
         for (let i=0; i<cwData.MetricDataResults[0].Timestamps.length; i++) {
             results.push({
-                timestamp: cwData.MetricDataResults[0].Timestamps[i],
-                //Successes: cwData.MetricDataResults[0].Values[i],
+                timestamp: convertUtcStringToEpoch(cwData.MetricDataResults[0].Timestamps[i]),
                 succeeded: cwData.MetricDataResults[0].Values[i],
-                //Attempts: cwData.MetricDataResults[1].Values[i],
-                attempted: cwData.MetricDataResults[1].Values[i],
-                //DurationSeconds: cwData.MetricDataResults[2].Values[i]
                 testExecutionSecs: cwData.MetricDataResults[2].Values[i]
             });
         }
@@ -180,7 +182,6 @@ async function getCloudWatchSLAMetrics(startTime, endTime, serviceName, nextToke
 // metricResults format: (return value of getCloudwatchSLAMetrics), example:
 // { timestamp: 2019-05-21T00:31:00.000Z,
 //     succeeded: 1,
-//     attempted: 1,
 //     testExecutionSecs: 18.8641 }
 // timeRangeStr: string enum in format 1d, 3d, 7d, 14d, etc.
 function calculateRangeSummary(metricResults, timeRangeStr) {
@@ -191,6 +192,11 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
         failureMinutes = 0,
         numOutages = 0;
 
+    // if the first data point is a failure, we need to start out with an outage
+    if (!metricResults[0].succeeded) {
+        numOutages = 1;
+    }
+
     let lastStatusWasSuccess = true,
         lastTimestamp = null;
     for (let result of metricResults) {
@@ -198,16 +204,16 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
 
         if (isTimestampWithinTimeRange(result.timestamp, timeRangeStr)) {
             numAttempts++;
-            if (result.succeededd) {
+            if (result.succeeded) {
                 lastStatusWasSuccess = true;
                 numSuccesses++;
             } else {
                 lastStatusWasSuccess = false;
                 numFailures++;
                 if (lastTimestamp) {
-                    failureMinutes += numMinutesBetweenTimestamps(result.Timestamp, lastTimestamp);
+                    failureMinutes += numMinutesBetweenTimestamps(result.timestamp, lastTimestamp);
                 }
-                lastTimestamp = result.Timestamp;
+                lastTimestamp = result.timestamp;
             }
             // did the status change from the prior period?
             if (lastStatusWasSuccess != prev) {
@@ -234,9 +240,9 @@ function calculateStatusChanges(metricResults) {
 
     let statusChanges = [],
         lastStatusWasSuccess = true,
-        lastTimestamp = metricResults[0].Timestamp,
+        lastTimestamp = metricResults[0].timestamp,
         durationMins = 0,
-        timeStampLastChange = metricResults[0].Timestamp;
+        timeStampLastChange = metricResults[0].timestamp;
     let allMetricsExceptFirst = metricResults.slice(1);
     for (let result of allMetricsExceptFirst) {
         let prev = lastStatusWasSuccess;
@@ -246,31 +252,24 @@ function calculateStatusChanges(metricResults) {
         } else {
             lastStatusWasSuccess = false;
             if (lastTimestamp) {
-                durationMins += numMinutesBetweenTimestamps(result.Timestamp, lastTimestamp);
+                durationMins += numMinutesBetweenTimestamps(result.timestamp, lastTimestamp);
             }
-            lastTimestamp = result.Timestamp;
+            lastTimestamp = result.timestamp;
         }
         // did the status change from the prior period?
         if (lastStatusWasSuccess != prev) {
             statusChanges.push({
                 status: result.succeeded ? 'SUCCESS' : 'FAILURE', // TODO: 'UNKNOWN' ???
-                fromTimestamp: timeStampLastChange,
-                toTimestamp: result.Timestamp,
+                fromTimestamp: convertUtcStringToEpoch(timeStampLastChange),
+                toTimestamp: convertUtcStringToEpoch(result.timestamp),
                 durationMins
             });
-            timeStampLastChange = result.Timestamp;
+            timeStampLastChange = result.timestamp;
             durationMins = 0;
         }
     }
 
     return statusChanges;
-}
-
-function generateHistoryRecords(metricResults) {
-    let history = [];
-    for (let result of metricResults) {
-
-    }
 }
 
 
@@ -294,11 +293,16 @@ function convertTimeRangeStrToRange(timeRangeStr) {
     return moment().range(startDate, endDate);
 }
 
-function isTimestampWithinTimeRange(timestamp, timeRangeStr) {
+function isTimestampWithinTimeRange(epochTimestamp, timeRangeStr) {
     let range = convertTimeRangeStrToRange(timeRangeStr);
-    let isWithinRange = range.contains(timestamp);
-    //logger.trace(`timestamp: ${timestamp}, timeRangeStr: ${timeRangeStr}, ${isWithinRange}`);
+    let utcTimestamp = new Date(epochTimestamp * 1000);
+    let isWithinRange = range.contains(utcTimestamp);
+    //logger.trace(`epochTimestamp: ${epochTimestamp}, utcTimestamp: ${utcTimestamp}, timeRangeStr: ${timeRangeStr}, ${isWithinRange}`);
     return isWithinRange;
+}
+
+function convertUtcStringToEpoch(utcString) {
+    return ((new Date(utcString)).getTime())/1000|0;
 }
 
 module.exports = ReportService;

@@ -4,6 +4,7 @@ const AWS = require('aws-sdk');
 const config = require('./config');
 const logger = require('./logger');
 const ReportService = require('./reportService');
+const S3Util = require('./s3util');
 
 async function handler(event, context, done) {
     // raw console log output easier to copy/paste json from cloudwatch logs
@@ -38,17 +39,17 @@ async function deleteMessage(receiptHandle) {
         logger.debug('Skipping delete message, receipt handle indicates local testing');
     } else {
         try {
-        await sqs.deleteMessage({
-            ReceiptHandle: receiptHandle,
-            QueueUrl: queueUrl
-            }).promise();
+            await sqs.deleteMessage({
+                ReceiptHandle: receiptHandle,
+                QueueUrl: queueUrl
+                }).promise();
         }
         catch (err) {
             logger.error(`Error deleting message with receiptHandle ${receiptHandle}:`, err);
             throw err;
         }
     }
-    }
+}
 
 async function getAwsAccountId() {
     const sts = new AWS.STS();
@@ -68,12 +69,29 @@ async function processMessage(message, receiptHandle) {
     // }
 
     const reportService = new ReportService();
-    let summaryReport = await reportService.generateSummaryReport(
+    let report = await reportService.generateReport(
         message,
         ['1d', '3d', '7d', '14d']
     );
-    logger.info(summaryReport);
+    //logger.debug(report);
 
+    // add generated on properties to the reports
+    let currentEpoch = Math.round((new Date()).getTime() / 1000);
+    report.summary['reportGeneratedOn'] = currentEpoch;
+    report.history['reportGeneratedOn'] = currentEpoch;
+
+    await S3Util.uploadToS3(
+        config.REPORTS_S3_BUCKET_NAME,
+        `${process.env.AWS_ENV || 'dev'}/${message.service}/summary.json`,
+        JSON.stringify(report.summary, null, 2)
+        );
+
+    await S3Util.uploadToS3(
+        config.REPORTS_S3_BUCKET_NAME,
+        `${process.env.AWS_ENV || 'dev'}/${message.service}/history.json`,
+        JSON.stringify(report.history, null, 2)
+        );
+    
     await deleteMessage(receiptHandle)
 }
   
