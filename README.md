@@ -2,7 +2,19 @@
 
 This service pre-generates reports based on the CloudWatch SLA Monitor custom metrics, and stores those reports on S3, so that they can be viewed in the webapp very quickly, as the rendering time is done in advance.
 
-Each time SLA results are stored to the custom CloudWatch metrics, an SNS topic will fire to kick off this report renderer which will pre-render the summary and detail reports for each service for various time ranges (1d, 7d, 30d).
+Each time SLA results are published, there are two Lambda function which suscribe to that SNS event, sla-monitor-store-results-lambda, and this report worker lambda, which reads the values previously written to CloudWatch by the store results lambda combined with the current value from the SNS event.
+
+## Hosting the S3 Content in a Web Server
+
+Because the S3 bucket which these results are stored in is private, it is not accessible over the Internet.  You can use an S3 Proxy like the following to make it accessible via HTTP within a private subnet within your network.
+
+```shell
+iam-docker-un \
+    --image pottava/s3-proxy \
+    -p 8080:80 \
+    -e AWS_S3_BUCKET=sla-monitor-reports-dev-us-east-1 \
+    --profile dev
+```
 
 ## Example Output
 
@@ -10,8 +22,8 @@ This service produces the following output.
 
 ### Example Output - Service Current Summary
 
-s3://<bucketname>/<env>/<servicename>/current-summary.json
-s3://sla-monitor-reports-dev-us-east-1/dev/myservice/current-summary.json
+s3://<bucketname>/<env>/<servicename>/summary.json
+s3://sla-monitor-reports-dev-us-east-1/dev/myservice/summary.json
 ```json
 {
     "serviceName": "myservice",
@@ -44,8 +56,8 @@ s3://sla-monitor-reports-dev-us-east-1/dev/myservice/current-summary.json
 
 ### Example Output - Service History
 
-s3://<bucketname>/<env>/<servicename>/<timerange>.json
-s3://sla-monitor-reports-dev-us-east-1/dev/myservice/1d.json
+s3://<bucketname>/<env>/<servicename>/history/<timerange>.json
+s3://sla-monitor-reports-dev-us-east-1/dev/myservice/history/1d.json
 ```json
 {
     "history": [
@@ -63,6 +75,21 @@ s3://sla-monitor-reports-dev-us-east-1/dev/myservice/1d.json
         }
     ]
 }
+```
+
+### Example Output - Services List
+
+s3://<bucketname>/<env>/services.json
+s3://sla-monitor-reports-dev-us-east-1/dev/services.json
+```json
+[
+  {
+    "service": "myservice"
+  },
+  {
+    "service": "anotherservice"
+  }  
+]
 ```
 
 ## Setup

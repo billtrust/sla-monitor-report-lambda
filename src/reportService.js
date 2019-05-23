@@ -20,11 +20,11 @@ class ReportService {
         logger.trace(metricResults);
 
         let rangeSummaries = [];
-        for (let timeRange of timeRanges) {
-            let rangeSummary = calculateRangeSummary(metricResults, timeRange);
+        for (let timeRangeStr of timeRanges) {
+            let rangeSummary = calculateRangeSummary(metricResults, timeRangeStr);
             rangeSummaries.push(
                 {
-                    timeRange: timeRange,
+                    timeRange: timeRangeStr,
                     summary: {
                         numAttempts: rangeSummary.numAttempts,
                         numSuccesses: rangeSummary.numSuccesses,
@@ -39,6 +39,27 @@ class ReportService {
 
         let statusChanges = calculateStatusChanges(metricResults);
 
+        let rangeHistory = {};
+        for (let timeRangeStr of timeRanges) {
+            rangeHistory[timeRangeStr] = { history: [] };
+        }
+        for (let timeRangeStr of timeRanges) {
+            for (let metric of metricResults) {
+                if (isTimestampWithinTimeRange(metric.timestamp, timeRangeStr)) {
+                    rangeHistory[timeRangeStr]['history'].push(metric);
+                }
+            }
+        }
+
+        let rangeHistoryArr = [];
+        for (let timeRangeStr of timeRanges) {
+            rangeHistoryArr.push(
+                {
+                    timeRange: timeRangeStr,
+                    history: rangeHistory[timeRangeStr]
+                });
+        }
+
         return {
             summary: {
                 serviceName: message.service,
@@ -50,7 +71,7 @@ class ReportService {
                 statusChanges    
             },
             history: [
-                ... metricResults
+                ... rangeHistoryArr
             ]
         };
 

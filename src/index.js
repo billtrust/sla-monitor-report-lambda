@@ -86,11 +86,14 @@ async function processMessage(message, receiptHandle) {
         JSON.stringify(report.summary, null, 2)
         );
 
-    await S3Util.uploadFile(
-        config.REPORTS_S3_BUCKET_NAME,
-        `${process.env.AWS_ENV || 'dev'}/${message.service}/history.json`,
-        JSON.stringify(report.history, null, 2)
-        );
+    for (let rangeHistory of report.history) {
+        await S3Util.uploadFile(
+            config.REPORTS_S3_BUCKET_NAME,
+            `${process.env.AWS_ENV || 'dev'}/${message.service}/history/${rangeHistory.timeRange}.json`,
+            JSON.stringify(rangeHistory.history, null, 2)
+            );
+    
+    }
 
     // rather than query cloudwatch each time for the list of services, we only
     // need to do this periodically, so find the last time this file was written
