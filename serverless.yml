@@ -68,6 +68,11 @@ functions:
           batchSize: 1
 
 resources:
+  Conditions:
+    CreateDevAssumeRolePolicy:
+      Fn::Equals:
+        - ${env:AWS_ENV}
+        - "dev"
   Resources:
     ProcessSLAReportSQSQueue:
       Type: AWS::SQS::Queue
@@ -127,3 +132,61 @@ resources:
           Rules:
           - ExpirationInDays: 30
             Status: Enabled
+    S3ProxyIAMRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: role-sla-monitor-reports-s3proxy
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Principal:
+                Service:
+                  - ec2.amazonaws.com
+                  - ecs-tasks.amazonaws.com
+                AWS:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:iam:'
+                      - Ref: 'AWS::AccountId'
+                      - 'root'
+                  - !If 
+                    - CreateDevAssumeRolePolicy
+                    - 'Fn::Join':
+                      - ':'
+                      -
+                        - 'arn:aws:iam:'
+                        - Ref: 'AWS::AccountId'
+                        - 'role/bt-role-ops-developers'
+                    - Ref: 'AWS::NoValue'
+
+              Action: 
+                - "sts:AssumeRole"
+        Path: "/"
+    S3ProxyIAMPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: "policy-sla-monitor-reports-s3-proxy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Action:
+                - "s3:ListBucket"
+              Resource:
+                Fn::GetAtt: [ SLAReportsBucket, Arn ]
+            -
+              Effect: "Allow"
+              Action:
+                - "s3:GetObject"
+              Resource:
+                - 'Fn::Join':
+                  - '/'
+                  -
+                    - Fn::GetAtt: [ SLAReportsBucket, Arn ]
+                    - '*'
+        Roles:
+          - Ref: S3ProxyIAMRole

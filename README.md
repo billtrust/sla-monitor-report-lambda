@@ -1,20 +1,31 @@
 # SLA Monitor Report SQS Worker Lambda
 
-This service pre-generates reports based on the CloudWatch SLA Monitor custom metrics, and stores those reports on S3, so that they can be viewed in the webapp very quickly, as the rendering time is done in advance.
+This service pre-generates reports based on the CloudWatch SLA Monitor custom metrics, and stores those reports on S3, so that they can be viewed in the webapp very quickly, as the rendering time is done in advance.  This is in place of a REST API, since the data can all be generated in advance.
 
-Each time SLA results are published, there are two Lambda function which suscribe to that SNS event, sla-monitor-store-results-lambda, and this report worker lambda, which reads the values previously written to CloudWatch by the store results lambda combined with the current value from the SNS event.
+Each time SLA results are published from the SLA Runner, there are two Lambda function which suscribe to that SNS event, sla-monitor-store-results-lambda, and this report worker lambda, which reads the values previously written to CloudWatch by the store results lambda combined with the current value from the SNS event.
 
 ## Hosting the S3 Content in a Web Server
 
 Because the S3 bucket which these results are stored in is private, it is not accessible over the Internet.  You can use an S3 Proxy like the following to make it accessible via HTTP within a private subnet within your network.
 
+This uses an open source reverse proxy for private S3 buckets:
+https://github.com/pottava/aws-s3-proxy
+
 ```shell
-iam-docker-un \
+iam-docker-run \
     --image pottava/s3-proxy \
     -p 8080:80 \
     -e AWS_S3_BUCKET=sla-monitor-reports-dev-us-east-1 \
+    --role role-sla-monitor-reports-s3proxy \
     --profile dev
 ```
+
+Once the S3 reverse proxy web server is running, you can retrieve reports via:
+http://localhost:8080/dev/services.json
+http://localhost:8080/dev/myservicename/summary.json
+http://localhost:8080/dev/myservicename/history/1d.json
+
+Of course you will need to run the report lambda to generate and store this output on S3 to begin with, see the section below on invoking the report generator for local testing.
 
 ## Example Output
 
