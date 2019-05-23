@@ -4,6 +4,8 @@ const logger = require('./logger');
 const Moment = require('moment');
 const MomentRange = require('moment-range');
 const moment = MomentRange.extendMoment(Moment);
+const jsonQuery = require('json-query')
+
 
 class ReportService {
     constructor() {}
@@ -54,8 +56,35 @@ class ReportService {
 
     }
 
-    async generateServicesList() {
-        // TODO
+    async generateServicesList(nextToken) {
+        const cloudwatch = new AWS.CloudWatch();
+        var params = {
+            Namespace: config.METRIC_NAMESPACE,
+        };
+        if (nextToken) {
+            params['NextToken'] = nextToken;
+        }
+        let serviceNames = [];
+        try {
+            let data = await cloudwatch.listMetrics(params).promise()
+            logger.trace(data);
+            for (let metric of data.Metrics) {
+                let serviceName = jsonQuery('Dimensions[Name=Service].Value', { data: metric }).value;
+                if (serviceName && !serviceNames.includes(serviceName) ) {
+                    serviceNames.push(serviceName);
+                }
+            }
+            if (data.NextToken) {
+                serviceNames.push(
+                    ... await this.generateServicesList(data.NextToken)
+                );
+            }
+        }
+        catch (err) {
+            logger.error(`Error listing CloudWatch metrics: ${err}`);
+            throw err;
+        }
+        return serviceNames;
     }
 
 }

@@ -83,7 +83,6 @@ When invoking the test below, you'll need to specify the name of the service whi
 ```bash
 docker build -t sla-monitor-report-sqsworker-lambda .
 
-export DEPLOY_BUCKET="company-deploy-bucket"
 export AWS_ENV="dev"
 iam-docker-run \
     --image sla-monitor-report-sqsworker-lambda \

@@ -73,24 +73,55 @@ async function processMessage(message, receiptHandle) {
         message,
         ['1d', '3d', '7d', '14d']
     );
-    //logger.debug(report);
+    logger.trace(report);
 
     // add generated on properties to the reports
     let currentEpoch = Math.round((new Date()).getTime() / 1000);
     report.summary['reportGeneratedOn'] = currentEpoch;
     report.history['reportGeneratedOn'] = currentEpoch;
 
-    await S3Util.uploadToS3(
+    await S3Util.uploadFile(
         config.REPORTS_S3_BUCKET_NAME,
         `${process.env.AWS_ENV || 'dev'}/${message.service}/summary.json`,
         JSON.stringify(report.summary, null, 2)
         );
 
-    await S3Util.uploadToS3(
+    await S3Util.uploadFile(
         config.REPORTS_S3_BUCKET_NAME,
         `${process.env.AWS_ENV || 'dev'}/${message.service}/history.json`,
         JSON.stringify(report.history, null, 2)
         );
+
+    // rather than query cloudwatch each time for the list of services, we only
+    // need to do this periodically, so find the last time this file was written
+    // to s3 and only query cloudwatch and write the file if it is old
+    let refreshServicesList = false;
+    let servicesListS3Key = `${process.env.AWS_ENV || 'dev'}/services.json`;
+    let modifiedSecondsAgo = await S3Util.fileModifiedSecondsAgo(config.REPORTS_S3_BUCKET_NAME, servicesListS3Key);
+    if (!modifiedSecondsAgo) {
+        logger.info('Services list does not yet exist');
+        refreshServicesList = true;
+    } else {
+        logger.info(`Services list modified ${modifiedSecondsAgo} seconds ago`);
+        if (modifiedSecondsAgo > config.SERVICES_LIST_TTL_SECONDS) {
+            refreshServicesList = true;
+        }
+    }
+
+    if (!refreshServicesList) {
+        logger.info('Skipping refresh of services list');
+    } else {
+        let services = await reportService.generateServicesList();
+        let servicesList = [];
+        for (let service of services) {
+            servicesList.push({ service });
+        }
+        await S3Util.uploadFile(
+            config.REPORTS_S3_BUCKET_NAME,
+            servicesListS3Key,
+            JSON.stringify(servicesList, null, 2)
+            );
+    }
     
     await deleteMessage(receiptHandle)
 }
