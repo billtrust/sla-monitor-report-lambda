@@ -30,7 +30,7 @@ async function handler(event, context, done) {
 async function deleteMessage(receiptHandle) {
     const sqs = new AWS.SQS({region: config.AWS_REGION});
     const awsAccountId = await getAwsAccountId();
-    const queueUrl = `https://sqs.${config.AWS_REGION}.amazonaws.com/${awsAccountId}/${config.RESULTS_SQS_QUEUE_NAME}`;
+    const queueUrl = `https://sqs.${config.AWS_REGION}.amazonaws.com/${awsAccountId}/${config.REPORTS_SQS_QUEUE_NAME}`;
     logger.debug(`Deleting message with receiptHandle ${receiptHandle} for queueUrl: ${queueUrl}`);
 
     const testingHandles = ['MessageReceiptHandle', 'SuccessTestingHandle', 'FailureTestingHandle'];

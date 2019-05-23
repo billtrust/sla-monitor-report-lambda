@@ -30,6 +30,12 @@ provider:
     -
       Effect: Allow
       Action:
+        - cloudwatch:GetMetricData
+        - cloudwatch:ListMetrics
+      Resource: "*"
+    -
+      Effect: Allow
+      Action:
         - s3:PutObject
       Resource: arn:aws:s3:::sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}/*
       
