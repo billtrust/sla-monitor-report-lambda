@@ -33,8 +33,8 @@ This service produces the following output.
 
 ### Example Output - Service Current Summary
 
-s3://<bucketname>/<env>/<servicename>/summary.json
-s3://sla-monitor-reports-dev-us-east-1/dev/myservice/summary.json
+`s3://<bucketname>/<env>/<servicename>/summary.json`
+`s3://sla-monitor-reports-dev-us-east-1/dev/myservice/summary.json`
 ```json
 {
     "serviceName": "myservice",
@@ -67,8 +67,8 @@ s3://sla-monitor-reports-dev-us-east-1/dev/myservice/summary.json
 
 ### Example Output - Service History
 
-s3://<bucketname>/<env>/<servicename>/history/<timerange>.json
-s3://sla-monitor-reports-dev-us-east-1/dev/myservice/history/1d.json
+`s3://<bucketname>/<env>/<servicename>/history/<timerange>.json`
+`s3://sla-monitor-reports-dev-us-east-1/dev/myservice/history/1d.json`
 ```json
 {
     "history": [
@@ -90,8 +90,8 @@ s3://sla-monitor-reports-dev-us-east-1/dev/myservice/history/1d.json
 
 ### Example Output - Services List
 
-s3://<bucketname>/<env>/services.json
-s3://sla-monitor-reports-dev-us-east-1/dev/services.json
+`s3://<bucketname>/<env>/services.json`
+`s3://sla-monitor-reports-dev-us-east-1/dev/services.json`
 ```json
 [
   {
