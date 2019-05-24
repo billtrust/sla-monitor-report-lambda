@@ -160,10 +160,10 @@ Terraform will prompt you to enter several values for existing resources in your
 
 ```shell
 # pip install iam-starter
-pushd terraform/dev
-# fill these exports in with your own values
-export AWS_ENV="dev"
+pushd terraform
+# fill these exports in with your own values per environment
 export PROFILE="dev"
+export AWS_ENV="dev"
 export REGION="us-east-1"
 export AWS_BACKEND_REGION="us-east-1"
 export AWS_DEFAULT_REGION="us-east-1"
