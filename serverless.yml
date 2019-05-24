@@ -92,7 +92,7 @@ resources:
             Fn::GetAtt: 
               - "ProcessSLAReportSQSQueueDeadletter"
               - "Arn"
-          maxReceiveCount: 5
+          maxReceiveCount: 2
     ProcessSLAReportSQSQueuePolicy:
       Type: 'AWS::SQS::QueuePolicy'
       Properties:
@@ -141,7 +141,7 @@ resources:
     S3ProxyIAMRole:
       Type: "AWS::IAM::Role"
       Properties:
-        RoleName: role-sla-monitor-reports-s3proxy
+        RoleName: sla-monitor-reports-s3proxy-${env:AWS_REGION, 'us-east-1'}
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -174,7 +174,7 @@ resources:
     S3ProxyIAMPolicy:
       Type: AWS::IAM::Policy
       Properties:
-        PolicyName: "policy-sla-monitor-reports-s3-proxy"
+        PolicyName: sla-monitor-reports-s3-proxy-${env:AWS_REGION, 'us-east-1'}
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
