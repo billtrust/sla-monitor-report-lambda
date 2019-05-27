@@ -16,7 +16,16 @@ class ReportService {
         const endTime = (new Date).getTime();
         const longestTimeRange = timeRanges[timeRanges.length - 1]
         const startTime = epochFromStartOfTimeRange(longestTimeRange)
-        let metricResults = await getCloudWatchSLAMetrics(startTime, endTime, message.service);
+        // add current SNS data point to metricResults since that was just written to cloudwatch
+        // and won't likely appear in the results
+        let metricResults = [
+            {
+                timestamp: message.timestamp,
+                succeeded: message.succeeded,
+                testExecutionSecs: message.testExecutionSecs
+            },
+            ... await getCloudWatchSLAMetrics(startTime, endTime, message.service)
+        ]
         logger.trace(metricResults);
 
         let rangeSummaries = [];
