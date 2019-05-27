@@ -71,7 +71,7 @@ async function processMessage(message, receiptHandle) {
     const reportService = new ReportService();
     let report = await reportService.generateReport(
         message,
-        ['1d', '3d', '7d', '14d']
+        config.TIME_RANGES.split(',')
     );
     logger.trace(report);
 
@@ -82,14 +82,14 @@ async function processMessage(message, receiptHandle) {
 
     await S3Util.uploadFile(
         config.REPORTS_S3_BUCKET_NAME,
-        `${process.env.AWS_ENV || 'dev'}/${message.service}/summary.json`,
+        `${config.REPORTS_S3_PREFIX}${process.env.AWS_ENV || 'dev'}/${message.service}/summary.json`,
         JSON.stringify(report.summary, null, 2)
         );
 
     for (let rangeHistory of report.history) {
         await S3Util.uploadFile(
             config.REPORTS_S3_BUCKET_NAME,
-            `${process.env.AWS_ENV || 'dev'}/${message.service}/history/${rangeHistory.timeRange}.json`,
+            `${config.REPORTS_S3_PREFIX}${process.env.AWS_ENV || 'dev'}/${message.service}/history/${rangeHistory.timeRange}.json`,
             JSON.stringify(rangeHistory.history, null, 2)
             );
     
@@ -121,7 +121,7 @@ async function processMessage(message, receiptHandle) {
         }
         await S3Util.uploadFile(
             config.REPORTS_S3_BUCKET_NAME,
-            servicesListS3Key,
+            `${config.REPORTS_S3_PREFIX}${servicesListS3Key}`,
             JSON.stringify(servicesList, null, 2)
             );
     }

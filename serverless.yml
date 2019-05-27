@@ -63,6 +63,8 @@ functions:
       METRIC_NAMESPACE: ${env:SLAMONITOR_NAMESPACE, 'SLA-Monitor'}
       REPORTS_SQS_QUEUE_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}
       REPORTS_S3_BUCKET_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
+      REPORTS_S3_PREFIX: 'slamon/'
+      TIME_RANGES: '1d,3d,7d,14d'
       SERVICES_LIST_TTL_SECONDS: 30
       LOG_LEVEL: 'debug'
     events:

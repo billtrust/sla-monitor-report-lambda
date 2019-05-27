@@ -64,7 +64,7 @@ class ReportService {
             summary: {
                 serviceName: message.service,
                 env: process.env.AWS_ENV,
-                currentStatus: message.succeeded,
+                currentStatus: message.succeeded ? 'SUCCESS' : 'FAILURE',
                 rangeSummaries: [
                     ... rangeSummaries
                 ],
