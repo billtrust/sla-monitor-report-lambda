@@ -46,7 +46,7 @@ class ReportService {
             )
         }
 
-        let statusChanges = calculateStatusChanges(metricResults);
+        let statusChanges = calculateStatusChanges(metricResults, message.service);
 
         let rangeHistory = {};
         for (let timeRangeStr of timeRanges) {
@@ -294,7 +294,7 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
     }
 }
 
-function calculateStatusChanges(metricResults) {
+function calculateStatusChanges(metricResults, service) {
     logger.debug(`Calculating status changes (metricResults length: ${metricResults.length})`)
 
     let statusChanges = [],
@@ -321,7 +321,8 @@ function calculateStatusChanges(metricResults) {
                 status: result.succeeded ? 'SUCCESS' : 'FAILURE', // TODO: 'UNKNOWN' ???
                 fromTimestamp: convertUtcStringToEpoch(timeStampLastChange),
                 toTimestamp: convertUtcStringToEpoch(result.timestamp),
-                durationMins
+                durationMins,
+                detailLocation: `s3://${config.SLARUNNER_S3BUCKETNAME}/${service}/${(new Date(result.timestamp)).getTime()}_${result.succeeded ? 'SUCCESS' : 'FAILURE'}`
             });
             timeStampLastChange = result.timestamp;
             durationMins = 0;

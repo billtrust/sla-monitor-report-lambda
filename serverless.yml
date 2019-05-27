@@ -65,6 +65,7 @@ functions:
       REPORTS_S3_BUCKET_NAME: sla-monitor-reports-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
       REPORTS_S3_PREFIX: 'slamon/'
       TIME_RANGES: '1d,3d,7d,14d'
+      SLARUNNER_S3BUCKETNAME: sla-monitor-runner-logs-${env:AWS_ENV, 'dev'}-${env:AWS_REGION, 'us-east-1'}
       SERVICES_LIST_TTL_SECONDS: 30
       LOG_LEVEL: 'debug'
     events:
