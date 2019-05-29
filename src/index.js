@@ -99,7 +99,7 @@ async function processMessage(message, receiptHandle) {
     // need to do this periodically, so find the last time this file was written
     // to s3 and only query cloudwatch and write the file if it is old
     let refreshServicesList = false;
-    let servicesListS3Key = `${process.env.AWS_ENV || 'dev'}/services.json`;
+    let servicesListS3Key = `${config.REPORTS_S3_PREFIX}${process.env.AWS_ENV || 'dev'}/services.json`;
     let modifiedSecondsAgo = await S3Util.fileModifiedSecondsAgo(config.REPORTS_S3_BUCKET_NAME, servicesListS3Key);
     if (!modifiedSecondsAgo) {
         logger.info('Services list does not yet exist');

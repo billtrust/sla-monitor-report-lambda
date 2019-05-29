@@ -23,9 +23,9 @@ iam-docker-run \
 ```
 
 Once the S3 reverse proxy web server is running, you can retrieve reports via:
-http://localhost:8080/dev/services.json  
-http://localhost:8080/dev/myservicename/summary.json  
-http://localhost:8080/dev/myservicename/history/1d.json  
+http://localhost:8080/slamon/dev/services.json  
+http://localhost:8080/slamon/dev/myservicename/summary.json  
+http://localhost:8080/slamon/dev/myservicename/history/1d.json  
 
 Of course you will need to run the report lambda to generate and store this output on S3 to begin with, see the section below on invoking the report generator for local testing.
 

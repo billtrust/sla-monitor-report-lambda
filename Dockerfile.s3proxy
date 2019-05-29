@@ -10,7 +10,7 @@ RUN git checkout v1.4.1 > /dev/null 2>&1
 RUN dep ensure
 RUN go build -a -installsuffix cgo -ldflags "-s -w"
 
-FROM alpine:3.8
+FROM alpine
 
 ENV AWS_REGION=us-east-1 \
     APP_PORT=80 \
