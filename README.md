@@ -54,7 +54,6 @@ This service produces the following output.
                 "numOutages": 1
             }
         },
-        // repeast for 1d, 3d, 7d, 14d (later perhaps 30d, 60d, 90d)
     ],
     "statusChanges": [
         {
