@@ -42,6 +42,7 @@ This service produces the following output.
     "serviceName": "myservice",
     "env": "dev",
     "currentStatus": "SUCCESS|FAILURE",
+    "currentStatusDurationMins": 1380,
     "rangeSummaries": [
         {
             "timeRange": "1d",
@@ -65,6 +66,8 @@ This service produces the following output.
     ]
 }
 ```
+
+NOTE: `currentStatusDurationMins` may have the value of -1 which indicates max visibility, that as far back as we have data, the duration has not changed.
 
 ### Example Output - Service History
 

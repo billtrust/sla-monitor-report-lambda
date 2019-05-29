@@ -74,6 +74,7 @@ class ReportService {
                 serviceName: message.service,
                 env: process.env.AWS_ENV,
                 currentStatus: message.succeeded ? 'SUCCESS' : 'FAILURE',
+                currentStatusDurationMin: calculateDurationMinsCurrentState(metricResults, message.succeeded),
                 rangeSummaries: [
                     ... rangeSummaries
                 ],
@@ -294,6 +295,20 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
     }
 }
 
+function calculateDurationMinsCurrentState(metricResults, mostRecentSucceeded) {
+    let firstChangeTimestamp = null;
+    for (let metricResult of metricResults) {
+        if (metricResult.succeeded != mostRecentSucceeded) {
+            firstChangeTimestamp = metricResult.timestamp;
+            let currentTime = (new Date).getTime();
+            let mins = numMinutesBetweenTimestamps(firstChangeTimestamp * 1000, currentTime);
+            return mins;
+        }
+    }
+    logger.debug(`Could not find any status change from current with all metric results`);
+    return -1;
+}
+
 function calculateStatusChanges(metricResults, service) {
     logger.debug(`Calculating status changes (metricResults length: ${metricResults.length})`)
 
@@ -343,7 +358,9 @@ function epochFromStartOfTimeRange(timeRangeStr) {
 }
 
 function numMinutesBetweenTimestamps(startTime, endTime) {
-    let duration = moment.duration(moment(endTime).diff(moment(startTime)));
+    let momentStart = moment(startTime);
+    let momentEnd = moment(endTime);
+    let duration = moment.duration(momentEnd.diff(momentStart));
     return duration.asMinutes();
 }
 
