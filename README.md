@@ -15,6 +15,9 @@ iam-docker-run \
     --image sla-monitor/sla-monitor-reports-s3proxy:latest \
     -p 8080:80 \
     -e AWS_S3_BUCKET=sla-monitor-reports-dev-us-east-1 \
+    -e CORS_ALLOW_ORIGIN="*" \
+    -e CORS_ALLOW_METHODS="GET" \
+    -e CORS_ALLOW_HEADERS="*" \
     --role sla-monitor-reports-s3proxy-us-east-1 \
     --profile dev
 ```
@@ -32,8 +35,8 @@ This service produces the following output.
 
 ### Example Output - Service Current Summary
 
-`s3://<bucketname>/<env>/<servicename>/summary.json`  
-`s3://sla-monitor-reports-dev-us-east-1/dev/myservice/summary.json`
+`s3://<bucketname>/slamon/<env>/<servicename>/summary.json`  
+`s3://sla-monitor-reports-dev-us-east-1/slamon/dev/myservice/summary.json`
 ```json
 {
     "serviceName": "myservice",
@@ -66,8 +69,8 @@ This service produces the following output.
 
 ### Example Output - Service History
 
-`s3://<bucketname>/<env>/<servicename>/history/<timerange>.json`  
-`s3://sla-monitor-reports-dev-us-east-1/dev/myservice/history/1d.json`
+`s3://<bucketname>/slamon/<env>/<servicename>/history/<timerange>.json`  
+`s3://sla-monitor-reports-dev-us-east-1/slamon/dev/myservice/history/1d.json`
 ```json
 {
     "history": [
@@ -89,8 +92,8 @@ This service produces the following output.
 
 ### Example Output - Services List
 
-`s3://<bucketname>/<env>/services.json`  
-`s3://sla-monitor-reports-dev-us-east-1/dev/services.json`
+`s3://<bucketname>/slamon/<env>/services.json`  
+`s3://sla-monitor-reports-dev-us-east-1/slamon/dev/services.json`
 ```json
 [
   {

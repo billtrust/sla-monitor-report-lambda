@@ -65,6 +65,18 @@ resource "aws_ecs_task_definition" "reports_s3proxy" {
       {
         "name": "HEALTHCHECK_PATH",
         "value": "/health"
+      },
+      {
+        "name": "CORS_ALLOW_ORIGIN",
+        "value": "*"
+      },
+      {
+        "name": "CORS_ALLOW_METHODS",
+        "value": "GET"
+      },
+      {
+        "name": "CORS_ALLOW_HEADERS",
+        "value": "*"
       }
     ],
     "links": null,
