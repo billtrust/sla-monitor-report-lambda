@@ -50,7 +50,7 @@ This service produces the following output.
                 "numAttempts": 100,
                 "numSuccesses": 99,
                 "successPercent": 99,
-                "failureMinutes": 13,
+                "failureMins": 13,
                 "numFailures": 2,
                 "numOutages": 1
             }

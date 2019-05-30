@@ -38,7 +38,7 @@ class ReportService {
                         numAttempts: rangeSummary.numAttempts,
                         numSuccesses: rangeSummary.numSuccesses,
                         successPercent: rangeSummary.successPercent,
-                        failureMinutes: Math.round(rangeSummary.failureMinutes * 100) / 100,
+                        failureMins: Math.round(rangeSummary.failureMins * 100) / 100,
                         numFailures: rangeSummary.numFailures,
                         numOutages: rangeSummary.numOutages
                     }
@@ -74,7 +74,7 @@ class ReportService {
                 serviceName: message.service,
                 env: process.env.AWS_ENV,
                 currentStatus: message.succeeded ? 'SUCCESS' : 'FAILURE',
-                currentStatusDurationMin: calculateDurationMinsCurrentState(metricResults, message.succeeded),
+                currentStatusDurationMins: calculateDurationMinsCurrentState(metricResults, message.succeeded),
                 rangeSummaries: [
                     ... rangeSummaries
                 ],
@@ -249,7 +249,7 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
     let numAttempts = 0,
         numSuccesses = 0,
         numFailures = 0,
-        failureMinutes = 0,
+        failureMins = 0,
         numOutages = 0;
 
     // if the first data point is a failure, we need to start out with an outage
@@ -271,7 +271,7 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
                 lastStatusWasSuccess = false;
                 numFailures++;
                 if (lastTimestamp) {
-                    failureMinutes += numMinutesBetweenTimestamps(result.timestamp, lastTimestamp);
+                    failureMins += numMinutesBetweenTimestamps(result.timestamp, lastTimestamp);
                 }
                 lastTimestamp = result.timestamp;
             }
@@ -290,7 +290,7 @@ function calculateRangeSummary(metricResults, timeRangeStr) {
         numSuccesses,
         successPercent: numSuccesses == 0 ? 0 : Math.floor(numSuccesses / numAttempts*100),
         numFailures,
-        failureMinutes,
+        failureMins,
         numOutages
     }
 }
@@ -302,7 +302,7 @@ function calculateDurationMinsCurrentState(metricResults, mostRecentSucceeded) {
             firstChangeTimestamp = metricResult.timestamp;
             let currentTime = (new Date).getTime();
             let mins = numMinutesBetweenTimestamps(firstChangeTimestamp * 1000, currentTime);
-            return mins;
+            return Math.round(mins * 10) / 10;
         }
     }
     logger.debug(`Could not find any status change from current with all metric results`);
