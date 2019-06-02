@@ -77,11 +77,6 @@ functions:
           batchSize: 1
 
 resources:
-  Conditions:
-    CreateDevAssumeRolePolicy:
-      Fn::Equals:
-        - ${env:AWS_ENV}
-        - "dev"
   Resources:
     ProcessSLAReportSQSQueue:
       Type: AWS::SQS::Queue
@@ -152,7 +147,6 @@ resources:
               Effect: "Allow"
               Principal:
                 Service:
-                  - ec2.amazonaws.com
                   - ecs-tasks.amazonaws.com
                 AWS:
                   - 'Fn::Join':
@@ -161,16 +155,6 @@ resources:
                       - 'arn:aws:iam:'
                       - Ref: 'AWS::AccountId'
                       - 'root'
-                  - !If 
-                    - CreateDevAssumeRolePolicy
-                    - 'Fn::Join':
-                      - ':'
-                      -
-                        - 'arn:aws:iam:'
-                        - Ref: 'AWS::AccountId'
-                        - 'role/bt-role-ops-developers'
-                    - Ref: 'AWS::NoValue'
-
               Action: 
                 - "sts:AssumeRole"
         Path: "/"
