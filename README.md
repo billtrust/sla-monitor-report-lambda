@@ -161,27 +161,43 @@ iam-docker-run \
 
 This will deploy the Docker container for the S3 Proxy web server to AWS ECS via Terraform.  It assumes you have an existing ECS cluster and a VPC setup with private subnets, and that you already have a S3 bucket and DynamoDB table used for Terraform remote state.  Alternatively, if you okay with having the data in these reports accessible on the Internet, you could have made the S3 bucket public.
 
-Terraform will prompt you to enter several values for existing resources in your infrastructure.  Rather than type these in, you will want to create a `dev.auto.tfvars` file in your terraform/dev/ directory with the values to each of the variables Terraform will prompt you for.
+Terraform will prompt you to enter several values for existing resources in your infrastructure.  Rather than type these in, you will want to create a `dev.tfvars` file in your ./terraform/ directory with the values to each of the variables Terraform will prompt you for.
 
 ```shell
 # pip install iam-starter
 pushd terraform
+
+# example: create a <env>.tfvars with your environment's input properties:
+cat <<EOF > dev.tfvars
+hostname = "api.slamon-dev.xxxxxxxxxx.com"
+dnsname = "slamon-dev.xxxxxxxxxx.com"
+vpc_id = "vpc-xxxxxxx"
+aws_env = "dev"
+alb_security_group_id = "sg-xxxxxxxxxxxx"
+alb_subnet1 = "subnet-xxxxxxxx"
+alb_subnet2 = "subnet-xxxxxxxx"
+ecs_cluster = "xxxxxxxx"
+alb_port = 80
+EOF
+
 # fill these exports in with your own values per environment
 export PROFILE="dev"
 export AWS_ENV="dev"
-export REGION="us-east-1"
-export AWS_BACKEND_REGION="us-east-1"
 export AWS_DEFAULT_REGION="us-east-1"
-export AWS_REMOTE_BUCKET="mycompany-tfstate-$AWS_ENV"
-export AWS_REMOTE_TABLE="tfstate_$AWS_ENV"
+export AWS_TFSTATE_BUCKET="mycompany-tfstate-$AWS_ENV"
+export AWS_TFSTATE_REGION="us-east-1"
+export AWS_TFSTATE_TABLE="tfstate_$AWS_ENV"
+export TF_DATA_DIR="./.$AWS_ENV-terraform/"
+
 iam-starter \
     --profile $PROFILE \
     --command \
         "terraform init \
-        -backend-config=\"region=$AWS_BACKEND_REGION\" \
-        -backend-config=\"bucket=$AWS_REMOTE_BUCKET\" \
-        -backend-config=\"dynamodb_table=$AWS_REMOTE_TABLE\" && \
+        -backend-config=\"region=$AWS_TFSTATE_REGION\" \
+        -backend-config=\"bucket=$AWS_TFSTATE_BUCKET\" \
+        -backend-config=\"dynamodb_table=$AWS_TFSTATE_TABLE\" && \
         terraform apply \
+        -var-file=\"$AWS_ENV.tfvars\" \
         -var \"aws_env=$AWS_ENV\" \
         -var \"aws_region=$AWS_DEFAULT_REGION\""
 
@@ -197,16 +213,16 @@ export ACCOUNT_ID=$( \
 # authenticate local docker client with remote ecr repository	
 CMD=$(aws ecr get-login \
     --no-include-email \
-    --region $REGION \
+    --region $AWS_DEFAULT_REGION \
     --profile $PROFILE)	
 eval $CMD
 # tag the image so it can be pushed to the repository	
 docker tag \
     sla-monitor/sla-monitor-reports-s3proxy:latest \
-    $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/sla-monitor/sla-monitor-reports-s3proxy:latest
+    $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/sla-monitor/sla-monitor-reports-s3proxy:latest
 # push to the remote repository	
 docker push \
-    $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/sla-monitor/sla-monitor-reports-s3proxy:latest
+    $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/sla-monitor/sla-monitor-reports-s3proxy:latest
 ```
 
 ## License

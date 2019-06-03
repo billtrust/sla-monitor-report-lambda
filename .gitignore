@@ -1,5 +1,9 @@
 node_modules
 .serverless
 .terraform
-generatedEvent.json
+.*-terraform
 *.auto.tfvars
+dev.tfvars
+stage.tfvars
+prod.tfvars
+generatedEvent.json

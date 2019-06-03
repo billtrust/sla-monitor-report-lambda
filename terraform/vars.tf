@@ -28,4 +28,6 @@ variable "alb_port" {
 
 variable "hostname" {}
 
-variable "route53_zone_id" {}
+variable "dnsname" {
+    description = "The dnsname where the web portions will be hosted at, e.g. slamon.yourcompany.com, slamon-dev.yourcompany.com"
+}
