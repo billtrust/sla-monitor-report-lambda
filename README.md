@@ -189,6 +189,7 @@ export AWS_TFSTATE_REGION="us-east-1"
 export AWS_TFSTATE_TABLE="tfstate_$AWS_ENV"
 export TF_DATA_DIR="./.$AWS_ENV-terraform/"
 
+TF_DATA_DIR="./.$AWS_ENV-terraform/" \
 iam-starter \
     --profile $PROFILE \
     --command \
