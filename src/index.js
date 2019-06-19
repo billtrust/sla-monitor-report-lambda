@@ -121,7 +121,7 @@ async function processMessage(message, receiptHandle) {
         }
         await S3Util.uploadFile(
             config.REPORTS_S3_BUCKET_NAME,
-            `${config.REPORTS_S3_PREFIX}${servicesListS3Key}`,
+            `${servicesListS3Key}`,
             JSON.stringify(servicesList, null, 2)
             );
     }

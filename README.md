@@ -148,12 +148,14 @@ https://github.com/billtrust/sla-monitor-store-results-lambda
 docker build -t sla-monitor/sla-monitor-report-sqsworker-lambda .
 export DEPLOY_BUCKET="company-deploy-bucket"
 export AWS_ENV="dev"
+export AWS_REGION="us-east-1"
 iam-docker-run \
     --image sla-monitor/sla-monitor-report-sqsworker-lambda \
     --full-entrypoint "sls deploy --deployBucket $DEPLOY_BUCKET" \
     --container-source-path /app \
     --host-source-path . \
     -e AWS_ENV=$AWS_ENV \
+    -e AWS_REGION=$AWS_REGION \
     --profile $AWS_ENV
 ```
 

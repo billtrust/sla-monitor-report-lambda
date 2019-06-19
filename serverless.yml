@@ -5,7 +5,7 @@ frameworkVersion: ">=1.2.0 <2.0.0"
 
 provider:
   name: aws
-  region: us-east-1
+  region: ${env:AWS_REGION, 'us-east-1'}
   runtime: nodejs8.10
   deploymentBucket: ${opt:deployBucket}
   stage: live
@@ -41,8 +41,8 @@ provider:
       
 
 plugins:
-  - serverless-mocha-plugin
   - serverless-prune-plugin
+  - serverless-mocha-plugin
 
 custom:
   # serverless-prune-plugin
@@ -52,8 +52,14 @@ custom:
 
 package:
   exclude:
-    - .git/**
-
+    - "**"
+  include:
+    - node_modules/**
+    - package.json
+    - package-lock.json
+    - events/**
+    - src/**
+ 
 functions:
   sla-monitor-report-sqsworker:
     name: 'sla-monitor-report-sqsworker'
