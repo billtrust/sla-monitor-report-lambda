@@ -60,7 +60,7 @@ resource "aws_ecs_task_definition" "reports_s3proxy" {
       },
       {
           "name": "AWS_S3_BUCKET",
-          "value": "sla-monitor-reports-dev-${var.aws_region}"
+          "value": "sla-monitor-reports-${var.aws_env}-${var.aws_region}"
       },
       {
         "name": "HEALTHCHECK_PATH",

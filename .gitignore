@@ -7,3 +7,5 @@ dev.tfvars
 stage.tfvars
 prod.tfvars
 generatedEvent.json
+sls-deploy*
+tf-deploy*
