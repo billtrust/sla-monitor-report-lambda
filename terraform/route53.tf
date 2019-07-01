@@ -13,6 +13,8 @@ resource "aws_route53_record" "reports_s3proxy" {
 # create internal DNS zone
 resource "aws_route53_zone" "sla_monitor" {
     name = "${var.dnsname}."
-    vpc_id  = "${var.vpc_id}"
-    vpc_region = "${var.aws_region}"
+    vpc {
+        vpc_id  = "${var.vpc_id}"
+        vpc_region = "${var.aws_region}"
+    }
 }

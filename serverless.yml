@@ -53,6 +53,7 @@ custom:
 package:
   exclude:
     - .git/**
+    - terraform/**
 
 functions:
   sla-monitor-report-sqsworker:
